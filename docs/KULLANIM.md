@@ -151,6 +151,8 @@ Ekledikten sonra çıkan bildirimdeki **Deneme Baskısı**'na basın (ya da ☰ 
 Yazıcılar → Deneme Baskısı). Seçili şablon, ad yerine "DENEME BASKISI"
 yazılarak basılır. Barkodu okutun; okunuyorsa yazıcı hazırdır.
 
+![Deneme baskısı bildirimi](ekran-goruntuleri/12-deneme-baskisi.png)
+
 **Etikette Türkçe harfler bozuk çıkıyor.**
 Künye harfleri görüntü olarak gönderdiği için bu olmamalı. Olursa yazıcı
 modelini ve etiketin fotoğrafını bilgi işleme iletin.
