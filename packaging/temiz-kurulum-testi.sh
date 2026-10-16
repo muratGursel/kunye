@@ -37,8 +37,8 @@ kunye onizle yok 2>&1 | tee -a /tmp/err.txt || true
 ! grep -q Traceback /tmp/err.txt
 
 echo "== masaüstü dosyaları"
-test -f /usr/share/applications/com.knicode.Kunye.desktop
-test -f /usr/share/icons/hicolor/scalable/apps/com.knicode.Kunye.svg
+test -f /usr/share/applications/io.github.muratgursel.Kunye.desktop
+test -f /usr/share/icons/hicolor/scalable/apps/io.github.muratgursel.Kunye.svg
 test -f /usr/share/doc/kunye/examples/yazicilar.json
 echo "  tamam"
 

@@ -1,5 +1,12 @@
 # Değişiklikler
 
+## 0.1.1 — 2026-10-16
+
+- Uygulama kimliği `io.github.muratgursel.Kunye` oldu (önceden
+  `com.knicode.Kunye`). 0.1.0'dan yükseltirken eski masaüstü dosyası ve
+  simge paketle birlikte kaldırılır; menüdeki Künye kısayolu kendiliğinden
+  yenilenir. Panele sabitlenmiş eski kısayol varsa yeniden sabitleyin.
+
 ## 0.1.0 — 2026-10-16
 
 İlk sürüm.

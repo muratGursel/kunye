@@ -24,8 +24,8 @@ install -m 644 "$ROOT"/kunye/gui/*.py "$LIB/gui/"
 install -m 644 "$ROOT"/kunye/sablonlar/*.json "$LIB/sablonlar/"
 install -m 755 "$ROOT/packaging/debian/kunye" "$PKG/usr/bin/kunye"
 install -m 755 "$ROOT/packaging/debian/kunye-arayuz" "$PKG/usr/bin/kunye-arayuz"
-install -m 644 "$ROOT/packaging/debian/com.knicode.Kunye.desktop" "$PKG/usr/share/applications/"
-install -m 644 "$ROOT/packaging/debian/com.knicode.Kunye.svg" \
+install -m 644 "$ROOT/packaging/debian/io.github.muratgursel.Kunye.desktop" "$PKG/usr/share/applications/"
+install -m 644 "$ROOT/packaging/debian/io.github.muratgursel.Kunye.svg" \
     "$PKG/usr/share/icons/hicolor/scalable/apps/"
 install -m 644 "$ROOT/README.md" "$ROOT/CHANGELOG.md" "$ROOT"/docs/*.md "$DOC/"
 install -m 644 "$ROOT/packaging/debian/yazicilar.json.ornek" "$DOC/examples/yazicilar.json"

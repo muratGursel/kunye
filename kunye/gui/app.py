@@ -15,7 +15,7 @@ from .. import __version__  # noqa: E402
 from . import compat  # noqa: E402
 from .window import KunyeWindow  # noqa: E402
 
-APP_ID = "com.knicode.Kunye"
+APP_ID = "io.github.muratgursel.Kunye"
 
 CSS = """
 .kunye-preview { background-color: white; }
