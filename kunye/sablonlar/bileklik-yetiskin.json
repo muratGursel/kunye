@@ -1,0 +1,28 @@
+{
+  "id": "bileklik-yetiskin",
+  "name": "Yetişkin Hasta Bilekliği",
+  "description": "25 x 279 mm (1\" x 11\") termal bileklik. Alerji kutusu yalnızca alerji girildiğinde basılır.",
+  "width_mm": 279.4,
+  "height_mm": 25.4,
+  "rotate": 90,
+  "fields": [
+    {"key": "ad_soyad", "label": "Ad Soyad", "required": true, "example": "Şükrü Işık Gündoğdu"},
+    {"key": "protokol_no", "label": "Protokol No", "required": true, "example": "2026104512"},
+    {"key": "dogum_tarihi", "label": "Doğum Tarihi", "required": true, "example": "14.03.1958"},
+    {"key": "tc_kimlik", "label": "TC Kimlik No", "example": "12345678901"},
+    {"key": "cinsiyet", "label": "Cinsiyet", "example": "E"},
+    {"key": "kan_grubu", "label": "Kan Grubu", "example": "A Rh+"},
+    {"key": "servis", "label": "Servis", "example": "Dahiliye 2"},
+    {"key": "alerji", "label": "Alerji", "example": "Penisilin"}
+  ],
+  "elements": [
+    {"type": "text", "x_mm": 12, "y_mm": 1.5, "height_mm": 4.5, "bold": true, "max_width_mm": 92, "text": "{ad_soyad|buyuk}"},
+    {"type": "text", "x_mm": 12, "y_mm": 7.5, "height_mm": 3.2, "max_width_mm": 92, "text": "D.T: {dogum_tarihi}   {cinsiyet}   Kan: {kan_grubu}"},
+    {"type": "text", "x_mm": 12, "y_mm": 12, "height_mm": 3.2, "max_width_mm": 92, "text": "TC: {tc_kimlik|maskele}   Prot: {protokol_no}"},
+    {"type": "text", "x_mm": 12, "y_mm": 16.3, "height_mm": 3.2, "max_width_mm": 92, "text": "{servis}"},
+    {"type": "box", "x_mm": 11.5, "y_mm": 20.2, "width_mm": 93, "height_mm": 4.6, "thickness_mm": 0.4, "show_if": "alerji"},
+    {"type": "text", "x_mm": 13, "y_mm": 20.8, "height_mm": 3.2, "bold": true, "max_width_mm": 90, "text": "ALERJİ: {alerji|buyuk}", "show_if": "alerji"},
+    {"type": "barcode", "x_mm": 110, "y_mm": 2, "height_mm": 14, "module_mm": 0.25, "human_readable": true, "data": "{protokol_no}"},
+    {"type": "qr", "x_mm": 140, "y_mm": 2, "module_mm": 0.5, "data": "{protokol_no}"}
+  ]
+}

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kunye"
+dynamic = ["version"]
+description = "Pardus için hasta bilekliği, barkod ve etiket basıcı"
+readme = "README.md"
+license = {text = "GPL-3.0-or-later"}
+requires-python = ">=3.11"
+dependencies = ["Pillow>=9.4", "qrcode>=7.3"]
+
+[project.scripts]
+kunye = "kunye.cli:main"
+
+[project.gui-scripts]
+kunye-arayuz = "kunye.gui.app:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "kunye.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["kunye", "kunye.*"]
+
+[tool.setuptools.package-data]
+kunye = ["sablonlar/*.json"]

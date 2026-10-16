@@ -1,0 +1,23 @@
+{
+  "id": "bileklik-bebek",
+  "name": "Bebek Bilekliği",
+  "description": "25 x 152 mm (1\" x 6\") yenidoğan bilekliği; anne adı ve doğum saatiyle.",
+  "width_mm": 152.4,
+  "height_mm": 25.4,
+  "rotate": 90,
+  "fields": [
+    {"key": "anne_adi", "label": "Anne Ad Soyad", "required": true, "example": "Gülşen Öztürk"},
+    {"key": "protokol_no", "label": "Protokol No", "required": true, "example": "2026104877"},
+    {"key": "dogum_tarihi", "label": "Doğum Tarihi", "required": true, "example": "16.10.2026"},
+    {"key": "dogum_saati", "label": "Doğum Saati", "example": "04:35"},
+    {"key": "cinsiyet", "label": "Cinsiyet", "example": "Kız"},
+    {"key": "kilo", "label": "Doğum Kilosu", "example": "3250 g"}
+  ],
+  "elements": [
+    {"type": "text", "x_mm": 10, "y_mm": 1.5, "height_mm": 4, "bold": true, "text": "BEBEK  {cinsiyet|buyuk}"},
+    {"type": "text", "x_mm": 10, "y_mm": 7, "height_mm": 3.5, "bold": true, "max_width_mm": 74, "text": "Anne: {anne_adi|buyuk}"},
+    {"type": "text", "x_mm": 10, "y_mm": 12, "height_mm": 3.2, "max_width_mm": 74, "text": "Doğum: {dogum_tarihi} {dogum_saati}"},
+    {"type": "text", "x_mm": 10, "y_mm": 16.5, "height_mm": 3.2, "max_width_mm": 74, "text": "Prot: {protokol_no}   {kilo}"},
+    {"type": "barcode", "x_mm": 88, "y_mm": 2, "height_mm": 14, "module_mm": 0.25, "human_readable": true, "data": "{protokol_no}"}
+  ]
+}

@@ -1,0 +1,17 @@
+Package: kunye
+Version: @VERSION@
+Architecture: all
+Maintainer: Murat GÜRSEL <muratgursel@gmail.com>
+Installed-Size: @SIZE@
+Depends: python3 (>= 3.11), python3-pil, python3-qrcode, python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, fonts-dejavu-core
+Recommends: cups-client
+Section: misc
+Priority: optional
+Homepage: https://github.com/muratGursel/kunye
+Description: hasta bilekliği, barkod ve etiket basıcı
+ Hastanelerde hasta bilekliği, laboratuvar tüpü, ilaç/serum ve dosya
+ etiketlerini termal etiket yazıcılarına basar. Zebra (ZPL) yazıcılara
+ ağ ya da CUPS üzerinden, diğer yazıcılara CUPS sürücüsüyle gönderir.
+ Türkçe karakterler her yazıcıda doğru basılır; TC kimlik numarası
+ maskelenir. Canlı önizlemeli masaüstü arayüzü, CSV'den toplu basım ve
+ komut satırı aracı içerir.

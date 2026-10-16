@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+
+find /usr/lib/python3/dist-packages/kunye -name __pycache__ -type d -prune -exec rm -rf {} +

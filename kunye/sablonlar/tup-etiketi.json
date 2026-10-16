@@ -1,0 +1,22 @@
+{
+  "id": "tup-etiketi",
+  "name": "Laboratuvar Tüp Etiketi",
+  "description": "50 x 25 mm numune tüpü etiketi; barkod numune numarasını taşır.",
+  "width_mm": 50,
+  "height_mm": 25,
+  "rotate": 0,
+  "fields": [
+    {"key": "ad_soyad", "label": "Ad Soyad", "required": true, "example": "Şükrü Işık Gündoğdu"},
+    {"key": "numune_no", "label": "Numune No", "required": true, "example": "2610160042"},
+    {"key": "protokol_no", "label": "Protokol No", "example": "2026104512"},
+    {"key": "dogum_tarihi", "label": "Doğum Tarihi", "example": "14.03.1958"},
+    {"key": "tup_turu", "label": "Tüp / Test", "example": "Biyokimya"}
+  ],
+  "elements": [
+    {"type": "text", "x_mm": 2, "y_mm": 1.2, "height_mm": 3.5, "bold": true, "max_width_mm": 46, "text": "{ad_soyad|buyuk}"},
+    {"type": "text", "x_mm": 2, "y_mm": 5.4, "height_mm": 2.6, "max_width_mm": 46, "text": "P: {protokol_no}   D.T: {dogum_tarihi}"},
+    {"type": "barcode", "x_mm": 3, "y_mm": 9, "height_mm": 9.5, "module_mm": 0.25, "human_readable": true, "data": "{numune_no}"},
+    {"type": "text", "x_mm": 48, "y_mm": 9.5, "height_mm": 3, "bold": true, "align": "right", "max_width_mm": 20, "text": "{tup_turu}"},
+    {"type": "text", "x_mm": 48, "y_mm": 21.5, "height_mm": 2.4, "align": "right", "text": "{bugun} {saat}"}
+  ]
+}

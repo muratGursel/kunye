@@ -1,0 +1,21 @@
+{
+  "id": "dosya-etiketi",
+  "name": "Hasta Dosyası Etiketi",
+  "description": "100 x 30 mm dosya, klasör ve evrak etiketi.",
+  "width_mm": 100,
+  "height_mm": 30,
+  "rotate": 0,
+  "fields": [
+    {"key": "ad_soyad", "label": "Ad Soyad", "required": true, "example": "Şükrü Işık Gündoğdu"},
+    {"key": "protokol_no", "label": "Protokol No", "required": true, "example": "2026104512"},
+    {"key": "dogum_tarihi", "label": "Doğum Tarihi", "example": "14.03.1958"},
+    {"key": "servis", "label": "Servis / Poliklinik", "example": "Dahiliye 2"}
+  ],
+  "elements": [
+    {"type": "text", "x_mm": 3, "y_mm": 2, "height_mm": 5, "bold": true, "max_width_mm": 94, "text": "{ad_soyad|buyuk}"},
+    {"type": "text", "x_mm": 3, "y_mm": 9, "height_mm": 3.5, "max_width_mm": 94, "text": "Prot: {protokol_no}   D.T: {dogum_tarihi}"},
+    {"type": "text", "x_mm": 3, "y_mm": 14, "height_mm": 3.5, "max_width_mm": 94, "text": "{servis}"},
+    {"type": "barcode", "x_mm": 3, "y_mm": 19.5, "height_mm": 8, "module_mm": 0.25, "data": "{protokol_no}"},
+    {"type": "text", "x_mm": 97, "y_mm": 23, "height_mm": 2.6, "align": "right", "text": "{bugun}"}
+  ]
+}

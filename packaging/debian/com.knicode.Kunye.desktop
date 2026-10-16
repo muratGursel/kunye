@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Künye
+GenericName=Etiket ve Bileklik Basıcı
+Comment=Hasta bilekliği, barkod ve etiket basın
+Exec=kunye-arayuz
+Icon=com.knicode.Kunye
+Terminal=false
+Categories=Office;
+Keywords=bileklik;etiket;barkod;zebra;hasta;tüp;künye;
+StartupNotify=true
