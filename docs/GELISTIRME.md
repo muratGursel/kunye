@@ -19,17 +19,20 @@ kunye/
   code128.py    Bağımlılıksız Code 128 kodlayıcı
   render.py     Şablonu yazıcı çözünürlüğünde 1 bitlik görüntüye çizme
   zpl.py        Görüntüyü ZPL ^GF komutuna çevirme (Z64 / hex)
-  printers.py   Yazıcı tanımları; TCP 9100, CUPS raw, CUPS görüntü, dosya
+  printers.py   Yazıcı tanımları; TCP 9100, CUPS raw, CUPS görüntü, dosya;
+                yazicilar.json okuma/yazma (gerekirse pkexec ile)
+  discovery.py  Yazıcı bulma: CUPS (tek IPP isteği), mDNS, ağ taraması, Zebra ~HI
   data.py       CSV okuma (ayraç ve kodlama tanıma, başlık eşleştirme)
   config.py     /etc/kunye ve ~/.config/kunye dizinleri
   cli.py        Komut satırı
   gui/          GTK 4 + libadwaita arayüzü
     app.py      Uygulama, eylemler, kısayollar
     window.py   Ana pencere
+    printers.py Yazıcılar ve Yazıcı Ekle pencereleri
     compat.py   Pardus 23 (GTK 4.8, libadwaita 1.2) uyumluluğu
   sablonlar/    Hazır şablonlar
-packaging/      .deb paketleme
-tools/          Geliştirme araçları (arayüz ekran görüntüsü)
+packaging/      .deb paketleme ve temiz kurulum testi
+tools/          gui_snapshot.py (arayüz senaryoları), sahte_zebra.py
 ```
 
 ## Tasarım kararları
@@ -54,6 +57,14 @@ verdiğinde eski görüntü silinir (aksi halde başka hastanın etiketi ekranda
 kalabilir); toplu basımda önce bütün etiketler çizilir, hata varsa hiçbiri
 gönderilmez.
 
+**Yazıcı bulma hızlı ve ölçülü olmalı.** CUPS kuyrukları `lpoptions` ile
+tek tek sorulmaz (ağdan gelen her kuyruk ~1 sn sürer); `CUPS-Get-Printers`
+IPP isteğiyle tek seferde okunur, bağımlılık eklememek için küçük bir IPP
+istemcisi `discovery.py` içindedir. Ağ taraması yalnızca kullanıcı
+istediğinde ve yalnızca kendi /24 ağında yapılır; Docker/VPN arayüzleri
+atlanır, 9100'ü açık olup `~HI` sorgusuna yanıt vermeyen cihazlar (ofis
+yazıcıları) listelenmez.
+
 **Uyumluluk.** Hedef Pardus 23 (Python 3.11, Pillow 9.4, GTK 4.8,
 libadwaita 1.2) ve Pardus 25. Yeni API'ler (`Gtk.FileDialog`,
 `Adw.AlertDialog`, `Adw.AboutDialog`) yalnızca varsa kullanılır;
@@ -71,6 +82,19 @@ python3 -m pytest
 barkodları **zbar ile gerçekten okutur**. Yeni şablon eklediğinizde otomatik
 olarak bu teste girer.
 
+`tests/test_yazici_ekleme.py` süreç içinde sahte bir Zebra çalıştırır:
+`kunye yazici-ekle --ag` ile eklenen yazıcının çözünürlüğünün `~HI`'den
+okunduğunu, `kunye deneme`'nin gönderdiği ZPL'den geri çıkarılan görüntünün
+doğru çözünürlükte olduğunu ve barkodunun okunduğunu denetler.
+
+### Gerçek yazıcı olmadan deneme
+
+```sh
+python3 tools/sahte_zebra.py --port 9100 --model ZD421-300dpi --cikti gelen.zpl
+kunye yazici-ekle deneme --ag 127.0.0.1     # çözünürlük 300 dpi olarak okunur
+kunye deneme deneme bileklik-yetiskin       # gelen.zpl dosyasına yazılır
+```
+
 ### Arayüz ekran görüntüleri
 
 `tools/gui_snapshot.py` arayüzü bir senaryo üzerinden sürer (doldurma, basma,
@@ -85,6 +109,17 @@ echo '{"deneme": {"kind": "file", "path": "/tmp/kunye-shots/basilan.zpl"}}' > /t
 XDG_CONFIG_HOME=/tmp/kunye-cfg GDK_BACKEND=broadway BROADWAY_DISPLAY=:7 \
     python3 tools/gui_snapshot.py /tmp/kunye-shots
 ```
+
+Yazıcı ekleme senaryosu için `KUNYE_SENARYO=yazici` verin. Sahte Zebra
+19100'de çalışıyorsa `KUNYE_TARAMA_PORT=19100` ağ taramasını yalnızca
+127.0.0.1'in bu portuna yönlendirir (gerçek ağ taranmaz).
+`KUNYE_SAHTE_LISTE=1` bilgisayardaki gerçek yazıcılar yerine sabit bir örnek
+liste kullanır; belgelerdeki görüntüler böyle alınır, gerçek ağ bilgisi
+görünmez. `KUNYE_SYSTEM_DIR` yazılabilir bir dizine verilirse "herkes için"
+kaydetme pkexec olmadan denenebilir.
+
+Tarayıcı sekmesi arka planda kalınca Broadway çizimi durdurabilir; görüntüler
+alınamazsa sekmeyi yenileyip senaryoyu yeniden çalıştırın.
 
 ## Paket ve sürüm
 

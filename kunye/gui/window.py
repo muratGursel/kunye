@@ -42,7 +42,7 @@ class KunyeWindow(Adw.ApplicationWindow):
         self.set_default_size(1100, 720)
 
         self.templates: list[Template] = sorted(all_templates().values(), key=lambda t: t.name)
-        self.printers: list[Printer] = list(load_printers().values())
+        self.printers: list[Printer] = []
         self.template: Template | None = None
         self.entries: dict[str, Adw.EntryRow] = {}
         self._preview_source = 0
@@ -120,14 +120,22 @@ class KunyeWindow(Adw.ApplicationWindow):
 
         # Basım ayarları
         print_group = Adw.PreferencesGroup(title="Basım")
-        names = [f"{p.name} — {p.description}" if p.description else p.name for p in self.printers]
-        self.printer_row = Adw.ComboRow(title="Yazıcı", model=Gtk.StringList.new(names or ["Yazıcı tanımlı değil"]))
-        self.printer_row.set_sensitive(bool(self.printers))
-        if not self.printers:
-            self.printer_row.set_subtitle(
-                "Basmak için bilgi işlemin yazıcı tanımlaması gerekir. "
-                "Örnek: /usr/share/doc/kunye/examples/yazicilar.json → /etc/kunye/yazicilar.json"
-            )
+        self.no_printer_row = Adw.ActionRow(
+            title="Yazıcı tanımlı değil",
+            subtitle="Bu bilgisayardaki ve ağdaki yazıcılar listelenir; birini seçmeniz yeterli.",
+        )
+        add_printer = Gtk.Button(label="Yazıcı Ekle", valign=Gtk.Align.CENTER)
+        add_printer.add_css_class("suggested-action")
+        add_printer.connect("clicked", lambda *_: self.add_printer())
+        self.no_printer_row.add_suffix(add_printer)
+        print_group.add(self.no_printer_row)
+
+        self.printer_row = Adw.ComboRow(title="Yazıcı")
+        manage = Gtk.Button(icon_name="emblem-system-symbolic", valign=Gtk.Align.CENTER,
+                            tooltip_text="Yazıcıları yönet")
+        manage.add_css_class("flat")
+        manage.connect("clicked", lambda *_: self.show_printers())
+        self.printer_row.add_suffix(manage)
         self.printer_row.connect("notify::selected", lambda *_: self.schedule_preview())
         print_group.add(self.printer_row)
 
@@ -144,13 +152,12 @@ class KunyeWindow(Adw.ApplicationWindow):
         clear.connect("clicked", lambda *_: self.clear_form())
         png = Gtk.Button(label="PNG Kaydet…")
         png.connect("clicked", lambda *_: self.save_png())
-        batch = Gtk.Button(label="CSV'den Toplu Bas…")
-        batch.set_sensitive(bool(self.printers))
-        batch.connect("clicked", lambda *_: self.batch_print())
-        self.print_button.set_sensitive(bool(self.printers))
-        for b in (clear, png, batch):
+        self.batch_button = Gtk.Button(label="CSV'den Toplu Bas…")
+        self.batch_button.connect("clicked", lambda *_: self.batch_print())
+        for b in (clear, png, self.batch_button):
             buttons.append(b)
         box.append(buttons)
+        self.reload_printers()
 
         clamp = Adw.Clamp(maximum_size=920)
         clamp.set_child(box)
@@ -202,10 +209,64 @@ class KunyeWindow(Adw.ApplicationWindow):
         if self.entries:
             next(iter(self.entries.values())).grab_focus()
 
+    # --- yazıcılar -----------------------------------------------------------
+
+    def reload_printers(self, select: str | None = None) -> None:
+        current = select or (self.selected_printer().name if self.selected_printer() else None)
+        try:
+            self.printers = list(load_printers().values())
+        except PrinterError as e:
+            self.printers = []
+            message = str(e)  # 'e' except bloğundan sonra silinir
+            GLib.idle_add(lambda: compat.alert(self, "Yazıcı tanımları okunamadı", message) and False)
+        names = [f"{p.name} — {p.description}" if p.description else p.name for p in self.printers]
+        self.printer_row.set_model(Gtk.StringList.new(names))
+        for i, p in enumerate(self.printers):
+            if p.name == current:
+                self.printer_row.set_selected(i)
+        has = bool(self.printers)
+        self.no_printer_row.set_visible(not has)
+        self.printer_row.set_visible(has)
+        self.print_button.set_sensitive(has and not self._busy)
+        self.batch_button.set_sensitive(has)
+        self.schedule_preview()
+
+    def show_printers(self):
+        from .printers import PrintersWindow
+
+        window = PrintersWindow(self, lambda: self.template, self.reload_printers)
+        window.present()
+        return window
+
+    def add_printer(self):
+        from .printers import AddPrinterWindow
+
+        def added(printer):
+            self.reload_printers(printer.name)
+            self.toast(f"“{printer.name}” eklendi.", "Deneme Baskısı", lambda: self.test_print(printer))
+
+        window = AddPrinterWindow(self, added)
+        window.present()
+        return window
+
+    def test_print(self, printer: Printer) -> None:
+        from .printers import run_in_thread, send_test_label
+
+        template = self.template
+
+        def done(_result, error):
+            if error:
+                compat.alert(self, "Deneme baskısı gönderilemedi", str(error))
+            else:
+                self.toast(f"Deneme etiketi ({template.name}) gönderildi. Barkodu okutarak kontrol edin.")
+
+        run_in_thread(lambda: send_test_label(printer, template), done)
+
     def selected_printer(self) -> Printer | None:
-        if not self.printers:
+        i = self.printer_row.get_selected()
+        if not self.printers or not 0 <= i < len(self.printers):
             return None
-        return self.printers[self.printer_row.get_selected()]
+        return self.printers[i]
 
     # --- önizleme ------------------------------------------------------------
 
@@ -339,9 +400,13 @@ class KunyeWindow(Adw.ApplicationWindow):
             return
         self.toast(f"Kaydedildi: {path.name}")
 
-    def toast(self, text: str) -> None:
+    def toast(self, text: str, button: str | None = None, on_button=None) -> None:
         # Yeni bildirim eskisinin arkasında beklemesin
         if self._toast:
             self._toast.dismiss()
         self._toast = Adw.Toast(title=text)
+        if button:
+            self._toast.set_button_label(button)
+            self._toast.set_timeout(10)
+            self._toast.connect("button-clicked", lambda *_: on_button())
         self.toasts.add_toast(self._toast)

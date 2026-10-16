@@ -13,9 +13,11 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import socket
 import subprocess
-from dataclasses import dataclass
+import tempfile
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 
 from PIL import Image
@@ -41,6 +43,7 @@ class Printer:
     path: str | None = None
     compression: str = "z64"
     description: str = ""
+    source: Path | None = field(default=None, compare=False, repr=False)  # tanımın okunduğu dosya
 
     def send(self, image: Image.Image, copies: int = 1) -> None:
         """``image`` yazıcı yönünde (döndürülmüş) olmalıdır."""
@@ -115,14 +118,84 @@ def parse_printers(raw: dict) -> dict[str, Printer]:
     return printers
 
 
+PRINTERS_FILE = "yazicilar.json"
+
+
+def printers_path(system: bool) -> Path:
+    return config_dirs()[0 if system else 1] / PRINTERS_FILE
+
+
+def read_printers_file(path: Path) -> dict:
+    if not path.is_file():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise PrinterError(f"{path}: JSON okunamadı: {e}") from None
+    if not isinstance(raw, dict):
+        raise PrinterError(f"{path}: yazıcı tanımları bir JSON nesnesi olmalı.")
+    return raw
+
+
 def load_printers() -> dict[str, Printer]:
     printers: dict[str, Printer] = {}
     for d in config_dirs():
-        path = d / "yazicilar.json"
-        if path.is_file():
-            try:
-                raw = json.loads(path.read_text(encoding="utf-8"))
-            except json.JSONDecodeError as e:
-                raise PrinterError(f"{path}: JSON okunamadı: {e}") from None
-            printers.update(parse_printers(raw))
+        path = d / PRINTERS_FILE
+        for name, printer in parse_printers(read_printers_file(path)).items():
+            printer.source = path
+            printers[name] = printer
     return printers
+
+
+def printer_spec(printer: Printer) -> dict:
+    """JSON'a yazılacak tanım: yalnızca varsayılandan farklı alanlar."""
+    defaults = Printer(name="", kind=printer.kind)
+    spec = {}
+    for f in fields(Printer):
+        if f.name in ("name", "source"):
+            continue
+        value = getattr(printer, f.name)
+        if f.name == "kind" or value != getattr(defaults, f.name):
+            spec[f.name] = value
+    return spec
+
+
+def updated_printers_json(path: Path, add: Printer | None = None, remove: str | None = None) -> str:
+    """Dosyadaki diğer tanımlara dokunmadan ekler/siler; yeni içeriği döndürür."""
+    raw = read_printers_file(path)
+    if remove is not None:
+        raw.pop(remove, None)
+    if add is not None:
+        raw[add.name] = printer_spec(add)
+    parse_printers(raw)  # yazmadan önce doğrula
+    return json.dumps(raw, ensure_ascii=False, indent=2) + "\n"
+
+
+def write_printers_file(path: Path, content: str, use_pkexec: bool = False) -> None:
+    """Yazıcı dosyasını yazar. Sistem dosyası için yetki yoksa pkexec kullanılabilir."""
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(content, encoding="utf-8")
+        tmp.replace(path)
+        return
+    except PermissionError:
+        if not use_pkexec:
+            raise PrinterError(
+                f"{path} dosyasına yazma yetkiniz yok. Komutu sudo ile çalıştırın."
+            ) from None
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".json", delete=False) as tmp:
+        tmp.write(content)
+    os.chmod(tmp.name, 0o644)
+    try:
+        result = subprocess.run(
+            ["pkexec", "install", "-D", "-m", "644", tmp.name, str(path)], capture_output=True, text=True
+        )
+    except FileNotFoundError:
+        raise PrinterError("Yönetici yetkisi alınamadı: pkexec bulunamadı.") from None
+    finally:
+        os.unlink(tmp.name)
+    if result.returncode in (126, 127):
+        raise PrinterError("Yönetici parolası girilmedi; yazıcı kaydedilmedi.")
+    if result.returncode != 0:
+        raise PrinterError(f"{path} yazılamadı: {result.stderr.strip()}")

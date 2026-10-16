@@ -38,8 +38,9 @@ class KunyeApp(Adw.Application):
         Gtk.StyleContext.add_provider_for_display(
             Gdk.Display.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
-        self._add_action("print", lambda: self.props.active_window.print_label(), ["<Control>p"])
-        self._add_action("clear", lambda: self.props.active_window.clear_form(), ["<Control>l"])
+        self._add_action("print", lambda: self._main_window().print_label(), ["<Control>p"])
+        self._add_action("clear", lambda: self._main_window().clear_form(), ["<Control>l"])
+        self._add_action("printers", lambda: self._main_window().show_printers())
         self._add_action("about", self._show_about)
         self._add_action("quit", self.quit, ["<Control>q"])
 
@@ -52,10 +53,14 @@ class KunyeApp(Adw.Application):
 
     def menu_model(self) -> Gio.Menu:
         menu = Gio.Menu()
+        menu.append("Yazıcılar…", "app.printers")
         menu.append("Formu Temizle", "app.clear")
         menu.append("Künye Hakkında", "app.about")
         menu.append("Çıkış", "app.quit")
         return menu
+
+    def _main_window(self) -> KunyeWindow:
+        return next(w for w in self.get_windows() if isinstance(w, KunyeWindow))
 
     def _on_activate(self, _app) -> None:
         window = self.props.active_window or KunyeWindow(self)

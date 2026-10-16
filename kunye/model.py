@@ -109,6 +109,14 @@ class Template:
     def example_values(self) -> dict[str, str]:
         return {f.key: f.example for f in self.fields}
 
+    def test_values(self) -> dict[str, str]:
+        """Deneme baskısı: örnek değerler, ama hiçbir ad gerçek bir hasta gibi görünmez."""
+        values = self.example_values()
+        for f in self.fields:
+            if f.key in ("ad_soyad", "anne_adi") or f.label.lower().startswith(("ad ", "anne ad")):
+                values[f.key] = "DENEME BASKISI"
+        return values
+
     def missing_fields(self, values: dict[str, str]) -> list[Field]:
         return [f for f in self.fields if f.required and not values.get(f.key, "").strip()]
 

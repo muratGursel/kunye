@@ -60,6 +60,29 @@ grep -E "temiz|önizleme" /tmp/gui.log | sed 's/^/  /'
 if grep -q Traceback /tmp/gui.log; then cat /tmp/gui.log; exit 1; fi
 echo "  basılan etiket: $(grep -c '^\^XA' /tmp/shots/basilan.zpl)"
 
+echo "== yazıcı ekleme (sahte Zebra, komut satırı)"
+python3 /tmp/tools/sahte_zebra.py --host 127.0.0.1 --port 19100 --model ZD421-300dpi \
+    --cikti /tmp/zebra.zpl >/tmp/zebra.log 2>&1 &
+sleep 1
+kunye yazici-bul 2>&1 | sed 's/^/  /'
+kunye yazici-ekle acil --ag 127.0.0.1:19100 --aciklama "Acil triyaj" --sistem | sed 's/^/  /'
+kunye yazicilar | grep -q "acil .*zpl-tcp .*300 dpi"
+kunye deneme acil bileklik-yetiskin | sed 's/^/  /'
+sleep 1
+test "$(grep -c '^\^XA' /tmp/zebra.zpl)" -eq 1
+echo "  sahte Zebra'ya ulaşan deneme etiketi: 1"
+kunye yazici-sil acil --sistem | sed 's/^/  /'
+
+echo "== yazıcı ekleme (arayüz)"
+rm -rf /tmp/cfg /etc/kunye && mkdir -p /tmp/cfg /tmp/yshots
+XDG_CONFIG_HOME=/tmp/cfg KUNYE_SENARYO=yazici KUNYE_TARAMA_PORT=19100 GDK_BACKEND=broadway \
+    BROADWAY_DISPLAY=:9 timeout 90 python3 tools/gui_snapshot.py /tmp/yshots >/tmp/ygui.log 2>&1 || true
+grep -E "bulunan|taramada|eklenen|hatalı adres" /tmp/ygui.log | sed 's/^/  /'
+if grep -q Traceback /tmp/ygui.log; then cat /tmp/ygui.log; exit 1; fi
+grep -q "eklenen: zd421 zpl-tcp 300 dpi /etc/kunye/yazicilar.json" /tmp/ygui.log
+test "$(grep -c '^\^XA' /tmp/zebra.zpl)" -eq 2
+echo "  arayüzden eklenen yazıcıya deneme etiketi ulaştı"
+
 echo "== kaldırma"
 apt-get remove -y -qq kunye >/dev/null 2>&1
 test ! -e /usr/lib/python3/dist-packages/kunye

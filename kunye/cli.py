@@ -65,12 +65,91 @@ def cmd_alanlar(args) -> None:
 def cmd_yazicilar(args) -> None:
     printers = load_printers()
     if not printers:
-        print("Tanımlı yazıcı yok. /etc/kunye/yazicilar.json ya da ~/.config/kunye/yazicilar.json "
-              "dosyasını oluşturun.\nÖrnek: /usr/share/doc/kunye/examples/yazicilar.json — "
-              "ayrıntılar: /usr/share/doc/kunye/YAZICILAR.md")
+        print("Tanımlı yazıcı yok. Arayüzde ☰ → Yazıcılar'dan ya da şu komutlarla ekleyin:\n"
+              "  kunye yazici-bul            (kurulu ve ağdaki yazıcıları listeler)\n"
+              "  sudo kunye yazici-ekle AD --ag IP --sistem\n"
+              "Ayrıntılar: /usr/share/doc/kunye/YAZICILAR.md")
     for p in printers.values():
         target = p.host or p.queue or p.path
         print(f"{p.name:<18} {p.kind:<11} {p.dpi} dpi  {target}  {p.description}")
+
+
+def cmd_yazici_bul(args) -> None:
+    from . import discovery
+
+    found = discovery.cups_printers() + discovery.mdns_printers()
+    if args.tara:
+        print("Ağ taranıyor (9100 portu)…", file=sys.stderr)
+        known = {(f.host, f.port) for f in found}
+        found += [f for f in discovery.scan_network() if (f.host, f.port) not in known]
+    others = [f for f in found if not f.label]
+    if not args.hepsi:
+        found = [f for f in found if f.label]
+    if not found:
+        print("Etiket yazıcısı bulunamadı. Ağdaki Zebra yazıcıları aramak için: kunye yazici-bul --tara")
+    configured = {(p.host, p.queue) for p in load_printers().values()}
+    for f in sorted(found, key=lambda f: not f.label):
+        print(f"{f.title}\n    {f.subtitle}")
+        if (f.host, f.queue) in configured:
+            print("    (zaten tanımlı)")
+            continue
+        target = f"--cups {f.queue}" if f.source == "cups" else f"--ag {f.host}" + (
+            f":{f.port}" if f.port != discovery.ZPL_PORT else "")
+        print(f"    eklemek için: sudo kunye yazici-ekle {f.suggested_name()} {target} --sistem")
+    if others and not args.hepsi:
+        print(f"\n(Ayrıca {len(others)} ofis yazıcısı var; listelemek için: kunye yazici-bul --hepsi)")
+
+
+def cmd_yazici_ekle(args) -> None:
+    from . import discovery
+    from .printers import printers_path, updated_printers_json, write_printers_file
+
+    if args.ag:
+        try:
+            found = discovery.manual_network_printer(args.ag)
+        except ValueError as e:
+            raise UsageError(str(e)) from None
+        if not found.zebra:
+            print("Uyarı: yazıcı Zebra olarak tanınmadı; ZPL desteklemiyorsa etiket basılamaz.",
+                  file=sys.stderr)
+    else:
+        queues = {f.queue: f for f in discovery.cups_printers()}
+        if args.cups not in queues:
+            known = ", ".join(sorted(queues)) or "(yok)"
+            raise UsageError(f"'{args.cups}' adlı CUPS yazıcısı yok. Kurulu yazıcılar: {known}")
+        found = queues[args.cups]
+    dpi = args.dpi or found.dpi
+    if not dpi:
+        dpi = 203
+        print("Uyarı: çözünürlük anlaşılamadı, 203 dpi varsayıldı. Farklıysa --dpi verin.", file=sys.stderr)
+    zpl = True if args.zpl else False if args.goruntu else None
+    printer = discovery.to_printer(found, args.ad, dpi, args.aciklama, zpl)
+    path = printers_path(args.sistem)
+    write_printers_file(path, updated_printers_json(path, add=printer))
+    print(f"'{printer.name}' eklendi ({printer.kind}, {printer.dpi} dpi): {path}")
+    print(f"Deneme baskısı için: kunye deneme {printer.name}")
+
+
+def cmd_yazici_sil(args) -> None:
+    from .printers import printers_path, read_printers_file, updated_printers_json, write_printers_file
+
+    path = printers_path(args.sistem)
+    if args.ad not in read_printers_file(path):
+        raise UsageError(f"'{args.ad}' {path} içinde tanımlı değil.")
+    write_printers_file(path, updated_printers_json(path, remove=args.ad))
+    print(f"'{args.ad}' silindi: {path}")
+
+
+def cmd_deneme(args) -> None:
+    printers = load_printers()
+    if args.yazici not in printers:
+        known = ", ".join(sorted(printers)) or "(yok)"
+        raise UsageError(f"'{args.yazici}' adlı yazıcı tanımlı değil. Tanımlı yazıcılar: {known}")
+    printer = printers[args.yazici]
+    tpl = find_template(args.sablon)
+    printer.send(for_print(render(tpl, tpl.test_values(), printer.dpi), tpl.rotate))
+    print(f"Deneme etiketi ({tpl.name}) {printer.name} yazıcısına gönderildi. "
+          "Barkodu okutarak kontrol edin.")
 
 
 def cmd_onizle(args) -> None:
@@ -134,6 +213,34 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_alanlar)
 
     sub.add_parser("yazicilar", help="tanımlı yazıcıları listele").set_defaults(func=cmd_yazicilar)
+
+    p = sub.add_parser("yazici-bul", help="bu bilgisayardaki ve ağdaki yazıcıları bul")
+    p.add_argument("--tara", action="store_true", help="yerel ağda Zebra yazıcı ara (9100 portu)")
+    p.add_argument("--hepsi", action="store_true", help="ofis yazıcılarını da listele")
+    p.set_defaults(func=cmd_yazici_bul)
+
+    p = sub.add_parser("yazici-ekle", help="yazıcı tanımla")
+    p.add_argument("ad", help="yazıcının Künye'deki adı (ör. acil-zebra)")
+    where = p.add_mutually_exclusive_group(required=True)
+    where.add_argument("--ag", metavar="IP[:PORT]", help="ağdaki Zebra yazıcının adresi")
+    where.add_argument("--cups", metavar="KUYRUK", help="bu bilgisayarda kurulu yazıcı (lpstat -e)")
+    lang = p.add_mutually_exclusive_group()
+    lang.add_argument("--zpl", action="store_true", help="CUPS yazıcısı Zebra (ZPL) dilini anlıyor")
+    lang.add_argument("--goruntu", action="store_true", help="CUPS yazıcısına sürücüsüyle görüntü gönder")
+    p.add_argument("--dpi", type=int, choices=(203, 300, 600), help="çözünürlük (bulunamazsa 203)")
+    p.add_argument("--aciklama", default="", help="arayüzde görünecek açıklama")
+    p.add_argument("--sistem", action="store_true", help="bu bilgisayardaki herkes için (/etc/kunye, sudo gerekir)")
+    p.set_defaults(func=cmd_yazici_ekle)
+
+    p = sub.add_parser("yazici-sil", help="yazıcı tanımını sil")
+    p.add_argument("ad")
+    p.add_argument("--sistem", action="store_true", help="/etc/kunye içindeki tanımı sil (sudo gerekir)")
+    p.set_defaults(func=cmd_yazici_sil)
+
+    p = sub.add_parser("deneme", help="yazıcıya deneme etiketi bas")
+    p.add_argument("yazici", help="yazıcı adı")
+    p.add_argument("sablon", nargs="?", default="dosya-etiketi", help="şablon (öntanımlı: dosya-etiketi)")
+    p.set_defaults(func=cmd_deneme)
 
     p = sub.add_parser("onizle", help="etiketi PNG (ya da ZPL) dosyasına yaz")
     _add_data_args(p)

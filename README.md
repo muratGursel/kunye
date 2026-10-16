@@ -35,6 +35,9 @@ bilgilerini yazar, önizlemeye bakar ve basarsınız.
 - **Hasta güvenliği:** basımdan sonra form temizlenir; önizleme hata verirse
   eski önizleme silinir, ekranda başka hastanın etiketi kalmaz; zorunlu alan
   eksikse basılmaz.
+- **Kolay yazıcı ekleme:** kurulu yazıcılar ve ağdaki Zebra yazıcılar
+  listelenir; model ve çözünürlük yazıcıdan okunur. Dosya düzenlemeye gerek
+  yoktur. Eklenen yazıcıdan tek tıkla deneme baskısı alınır.
 - **Merkezi yönetim:** yazıcı ve şablon tanımları `/etc/kunye` altına konarak
   (ör. Lider Ahenk ile) bütün bilgisayarlara dağıtılabilir.
 
@@ -60,9 +63,12 @@ Ya da [Sürümler](https://github.com/muratGursel/kunye/releases) sayfasından
 sudo apt install ./kunye_*_all.deb
 ```
 
-Kurulumdan sonra uygulama menüsünde **Künye** olarak görünür. Basmaya
-başlamadan önce bilgi işlemin yazıcıları tanımlaması gerekir:
+Kurulumdan sonra uygulama menüsünde **Künye** olarak görünür. İlk açılışta
+**Yazıcı Ekle**'ye basın: Künye bu bilgisayarda kurulu yazıcıları ve ağdaki
+Zebra yazıcıları bulup listeler, birini seçmeniz yeterlidir. Ayrıntılar:
 [docs/YAZICILAR.md](docs/YAZICILAR.md).
+
+<img src="docs/ekran-goruntuleri/10-yazici-ekle.png" alt="Yazıcı ekleme penceresi" width="560">
 
 ## Kullanım
 

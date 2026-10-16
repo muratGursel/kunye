@@ -32,7 +32,7 @@ Uygulama menüsünde **Künye**'ye tıklayın (Ofis bölümündedir). Uçbirimde
 | **Etiket Bilgileri** | Hasta bilgilerinin yazıldığı alanlar. `*` işaretli alanlar zorunludur. |
 | **Basım** | Yazıcı seçimi ve her etiketten kaç kopya basılacağı. |
 | **Bas** (sağ üst) | Etiketi seçili yazıcıya gönderir. |
-| **☰ menü** (sağ üst) | Formu temizle, Künye hakkında, çıkış. |
+| **☰ menü** (sağ üst) | Yazıcılar (ekle, sil, deneme baskısı), formu temizle, Künye hakkında, çıkış. |
 
 Uzun bileklik etiketlerinde önizleme yalnızca yazılı kısmı gösterir; bilekliğin
 boş kayış kısmı gösterilmez.
@@ -140,8 +140,16 @@ tasarlarken ya da bilgi işleme bir sorunu göstermek için kullanılabilir.
 ## 9. Sık sorulan sorular
 
 **Bas düğmesi soluk, tıklanmıyor.**
-Bu bilgisayar için yazıcı tanımlanmamış. Yazıcı satırında da "Yazıcı tanımlı
-değil" yazar. Bilgi işleme başvurun ([YAZICILAR.md](YAZICILAR.md)).
+Bu bilgisayar için yazıcı tanımlanmamış; Basım bölümünde "Yazıcı tanımlı
+değil" yazar. Yanındaki **Yazıcı Ekle** düğmesine basın: Künye yazıcıları
+bulup listeler, kullandığınız etiket yazıcısını seçip **Ekle**'ye basmanız
+yeterlidir. Herkes için eklerken yönetici parolası sorulur; parolayı
+bilmiyorsanız bilgi işleme başvurun. Ayrıntılar: [YAZICILAR.md](YAZICILAR.md).
+
+**Yeni yazıcının doğru çalıştığını nasıl anlarım?**
+Ekledikten sonra çıkan bildirimdeki **Deneme Baskısı**'na basın (ya da ☰ →
+Yazıcılar → Deneme Baskısı). Seçili şablon, ad yerine "DENEME BASKISI"
+yazılarak basılır. Barkodu okutun; okunuyorsa yazıcı hazırdır.
 
 **Etikette Türkçe harfler bozuk çıkıyor.**
 Künye harfleri görüntü olarak gönderdiği için bu olmamalı. Olursa yazıcı
